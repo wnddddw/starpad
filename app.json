@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "StarPad",
+    "slug": "starpad",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#fff8f3"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.starpad.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "用于上传头像和分享图片"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#fff8f3"
+      },
+      "package": "com.starpad.app"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
