@@ -7,6 +7,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize, cardShadow } from '../theme';
 import { api } from '../api';
+import { formatCount } from '../utils';
 
 const { width } = Dimensions.get('window');
 
@@ -18,12 +19,14 @@ export default function StarScreen() {
   const [contents, setContents] = useState([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     loadStar();
   }, [starId]);
 
   async function loadStar() {
+    setLoadError(false);
     try {
       const res = await api.getStar(starId);
       if (res?.star) {
@@ -34,7 +37,8 @@ export default function StarScreen() {
         return;
       }
     } catch (_) {}
-    // Mock
+    // Mock fallback
+    setLoadError(true);
     setStar({ _id: starId, name: starName || '明星', avatar: '', intro: '当红焦点艺人，持续输出高质量内容。', cover: '' });
     setContents([
       { _id: 'c1', title: '直播预告：今晚8点开启粉丝问答', summary: '准备好你的问题，今晚直播间见！', timeText: '10分钟前', coverImage: '' },
@@ -123,6 +127,7 @@ export default function StarScreen() {
 
       {/* Content Feed */}
       <View style={styles.feedSection}>
+        {loadError && <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm }}>⚠ 网络异常，显示示例内容</Text>}
         <Text style={styles.feedTitle}>最新动态</Text>
         {contents.map(item => (
           <TouchableOpacity key={item._id} style={styles.feedCard}
@@ -144,12 +149,6 @@ export default function StarScreen() {
       </View>
     </ScrollView>
   );
-}
-
-function formatCount(n) {
-  if (!n) return '0';
-  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
-  return String(n);
 }
 
 const styles = StyleSheet.create({

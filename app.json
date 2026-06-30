@@ -22,8 +22,6 @@
       },
       "package": "com.starpad.app"
     },
-    "plugins": [
-      "expo-router"
-    ]
+    "plugins": []
   }
 }

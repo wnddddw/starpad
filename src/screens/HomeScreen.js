@@ -7,6 +7,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize, cardShadow } from '../theme';
 import { api } from '../api';
+import { formatCount } from '../utils';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - spacing.lg * 2 - spacing.sm) / 2;
@@ -30,21 +31,27 @@ export default function HomeScreen() {
   const [activeTag, setActiveTag] = useState('热搜');
   const [stars, setStars] = useState(MOCK_STARS);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadStars = useCallback(async (tag) => {
+    try {
+      const res = await api.getStarList(tag);
+      if (res?.list?.length) {
+        setStars(res.list);
+        setError('');
+      }
+    } catch (_) {
+      setError('加载失败，请下拉刷新重试');
+    }
+  }, []);
 
   useFocusEffect(useCallback(() => {
-    loadStars();
-  }, [activeTag]));
-
-  async function loadStars() {
-    try {
-      const res = await api.getStarList(activeTag);
-      if (res?.list?.length) setStars(res.list);
-    } catch (_) {}
-  }
+    loadStars(activeTag);
+  }, [activeTag, loadStars]));
 
   function onRefresh() {
     setRefreshing(true);
-    loadStars().finally(() => setRefreshing(false));
+    loadStars(activeTag).finally(() => setRefreshing(false));
   }
 
   return (
@@ -106,16 +113,10 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>暂无明星入驻</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{error || '暂无明星入驻'}</Text>}
       />
     </View>
   );
-}
-
-function formatCount(n) {
-  if (!n) return '0';
-  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
-  return String(n);
 }
 
 const styles = StyleSheet.create({

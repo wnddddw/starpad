@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize } from '../theme';
 import { api } from '../api';
@@ -32,12 +32,12 @@ export default function VoteDetailScreen() {
     try {
       const res = await api.castVote(voteId, selectedIndex, count);
       if (res?.success !== false) {
-        alert('投票成功！');
+        Alert.alert('', '投票成功！');
         loadVote();
       } else {
-        alert(res?.err || '投票失败');
+        Alert.alert('', res?.err || '投票失败');
       }
-    } catch (_) { alert('网络错误'); }
+    } catch (_) { Alert.alert('', '网络错误，请重试'); }
   }
 
   if (!vote) return <View style={styles.container}><Text style={{ textAlign: 'center', padding: 60 }}>加载中...</Text></View>;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize } from '../theme';
@@ -15,6 +15,13 @@ const MENUS = [
 export default function ProfileScreen() {
   const nav = useNavigation();
   const [isLoggedIn, setIsLoggedIn] = useState(true);
+
+  function onLogout() {
+    Alert.alert('退出登录', '确定要退出登录吗？', [
+      { text: '取消', style: 'cancel' },
+      { text: '退出', onPress: () => setIsLoggedIn(false) },
+    ]);
+  }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -46,7 +53,7 @@ export default function ProfileScreen() {
 
       {/* Logout */}
       {isLoggedIn && (
-        <TouchableOpacity style={styles.logoutBtn}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
           <Text style={{ color: colors.textMuted, fontSize: fontSize.sm }}>退出登录</Text>
         </TouchableOpacity>
       )}

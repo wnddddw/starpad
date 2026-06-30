@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize } from '../theme';
 import { api } from '../api';
@@ -15,15 +15,15 @@ export default function QAAskScreen() {
   const [submitting, setSubmitting] = useState(false);
 
   async function onSubmit() {
-    if (question.trim().length < 5) { alert('问题至少5个字'); return; }
-    if (question.length > 200) { alert('问题不能超过200字'); return; }
+    if (question.trim().length < 5) { Alert.alert('', '问题至少5个字'); return; }
+    if (question.length > 200) { Alert.alert('', '问题不能超过200字'); return; }
     setSubmitting(true);
     try {
       await api.askQuestion(starId, question, price);
-      alert('提问已提交！');
+      Alert.alert('', '提问已提交！');
       nav.goBack();
     } catch (_) {
-      alert('提交失败');
+      Alert.alert('', '提交失败，请重试');
     }
     setSubmitting(false);
   }

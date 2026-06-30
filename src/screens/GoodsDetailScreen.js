@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize } from '../theme';
 import { api } from '../api';
@@ -23,6 +23,25 @@ export default function GoodsDetailScreen() {
       });
     });
   }, []);
+
+  function onBuy() {
+    if (qty > (goods.stock || 0)) {
+      Alert.alert('', '库存不足，当前库存：' + (goods.stock || 0));
+      return;
+    }
+    Alert.alert('确认购买', `确定购买 ${qty} 件「${goods.name}」？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '确定',
+        onPress: () => {
+          api.createMallOrder([{ goodsId: goods._id, qty }], '').then(res => {
+            if (res?.success !== false) Alert.alert('', '下单成功！');
+            else Alert.alert('', res?.err || '下单失败');
+          }).catch(() => Alert.alert('', '网络错误'));
+        },
+      },
+    ]);
+  }
 
   if (!goods) return <View style={styles.container}><Text style={{ textAlign: 'center', padding: 60 }}>加载中...</Text></View>;
 
@@ -54,11 +73,11 @@ export default function GoodsDetailScreen() {
             <Text style={{ fontSize: 18 }}>−</Text>
           </TouchableOpacity>
           <Text style={{ fontSize: fontSize.md, fontWeight: '600', marginHorizontal: spacing.md }}>{qty}</Text>
-          <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(q => q + 1)}>
+          <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(q => Math.min(goods.stock || 99, q + 1))}>
             <Text style={{ fontSize: 18 }}>+</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.buyBtn}>
+        <TouchableOpacity style={styles.buyBtn} onPress={onBuy}>
           <Text style={{ color: '#fff', fontWeight: '700', fontSize: fontSize.md }}>立即购买</Text>
         </TouchableOpacity>
       </View>

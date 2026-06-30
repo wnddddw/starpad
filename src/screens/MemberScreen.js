@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, fontSize } from '../theme';
+import { api } from '../api';
 
 const PLANS = [
   { name: '月卡', price: 25, period: '月', perks: ['独家内容解锁', '私密聊天', '会员专属群'] },
@@ -10,6 +12,24 @@ const PLANS = [
 ];
 
 export default function MemberScreen() {
+  const route = useRoute();
+  const { starId } = route.params || {};
+
+  function onBuyPlan(plan) {
+    Alert.alert('确认开通', `确定开通「${plan.name}」¥${plan.price}？`, [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '确定',
+        onPress: () => {
+          api.createMemberOrder(starId, plan).then(res => {
+            if (res?.success !== false) Alert.alert('', '下单成功，请完成支付！');
+            else Alert.alert('', res?.err || '下单失败');
+          }).catch(() => Alert.alert('', '网络错误'));
+        },
+      },
+    ]);
+  }
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: spacing.lg }}>
       <Text style={styles.title}>开通会员</Text>
@@ -33,9 +53,11 @@ export default function MemberScreen() {
           ))}
           <LinearGradient colors={plan.popular || plan.best ? colors.gradientPink : ['#f5f5f5', '#f5f5f5']}
             style={[styles.buyBtn, (plan.popular || plan.best) ? null : { backgroundColor: '#f5f5f5' }]}>
-            <Text style={{ color: plan.popular || plan.best ? '#fff' : colors.textSecondary, fontWeight: '700' }}>
-              {plan.popular || plan.best ? '立即开通' : '选择'}
-            </Text>
+            <TouchableOpacity onPress={() => onBuyPlan(plan)} style={{ width: '100%', alignItems: 'center' }}>
+              <Text style={{ color: plan.popular || plan.best ? '#fff' : colors.textSecondary, fontWeight: '700' }}>
+                {plan.popular || plan.best ? '立即开通' : '选择'}
+              </Text>
+            </TouchableOpacity>
           </LinearGradient>
         </TouchableOpacity>
       ))}

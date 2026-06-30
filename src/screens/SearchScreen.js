@@ -10,10 +10,11 @@ export default function SearchScreen() {
   const [results, setResults] = useState([]);
   const [hotTags] = useState(['张艺兴', '肖战', '杨幂', '王一博', '周杰伦', '舞台高光', '新专辑']);
 
-  async function onSearch() {
-    if (!keyword.trim()) return;
+  async function onSearch(kw) {
+    const searchTerm = (kw || keyword).trim();
+    if (!searchTerm) return;
     try {
-      const res = await api.getStarList(keyword);
+      const res = await api.getStarList(searchTerm);
       if (res?.list) setResults(res.list);
     } catch (_) {
       setResults([{ _id: 's1', name: '张艺兴', category: '歌手', followerCount: 248000 }]);
@@ -34,7 +35,7 @@ export default function SearchScreen() {
       {/* Hot tags */}
       <View style={styles.tagWrap}>
         {hotTags.map(t => (
-          <TouchableOpacity key={t} style={styles.tag} onPress={() => { setKeyword(t); onSearch(); }}>
+          <TouchableOpacity key={t} style={styles.tag} onPress={() => { setKeyword(t); onSearch(t); }}>
             <Text style={styles.tagText}>{t}</Text>
           </TouchableOpacity>
         ))}

@@ -32,7 +32,7 @@ export default function ChatRoomScreen() {
   function onSend() {
     const text = replyText.trim();
     if (!text) return;
-    const newMsg = { _id: 'tmp-' + Date.now(), text, timeText: '刚刚', isStar: false };
+    const newMsg = { _id: 'tmp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6), text, timeText: '刚刚', isStar: false };
     setMessages(prev => [...prev, newMsg]);
     setReplyText('');
     api.replyToStar('', starId, text);
@@ -40,7 +40,8 @@ export default function ChatRoomScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         ref={flatListRef}
         data={messages}

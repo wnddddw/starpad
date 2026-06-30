@@ -9,10 +9,10 @@ export const colors = {
   blueDark: '#3d6fdd',
 
   // Gradients
-  gradientPink: ['#ff5fb8', '#ff9a9e'] as const,
-  gradientBlue: ['#5a8dff', '#8ab4ff'] as const,
-  gradientHero: ['#ff5fb8', '#5a8dff'] as const,
-  gradientWarm: ['#fff8f3', '#f4f7ff'] as const,
+  gradientPink: ['#ff5fb8', '#ff9a9e'],
+  gradientBlue: ['#5a8dff', '#8ab4ff'],
+  gradientHero: ['#ff5fb8', '#5a8dff'],
+  gradientWarm: ['#fff8f3', '#f4f7ff'],
 
   // Neutrals
   bg: '#f8f6f3',

@@ -8,22 +8,27 @@ import { api } from '../api';
 export default function ChatScreen() {
   const nav = useNavigation();
   const [rooms, setRooms] = useState([]);
+  const [error, setError] = useState('');
 
-  useFocusEffect(useCallback(() => {
-    loadRooms();
-  }, []));
-
-  async function loadRooms() {
+  const loadRooms = useCallback(async () => {
     try {
       const res = await api.getChatRooms();
-      if (res?.list?.length) setRooms(res.list);
+      if (res?.list?.length) {
+        setRooms(res.list);
+        setError('');
+      }
     } catch (_) {
       setRooms([
         { starId: 's1', starName: '张艺兴', starAvatar: '', lastMessage: '大家晚上好，今天排练结束了~', updatedAt: '刚刚' },
         { starId: 's2', starName: '肖战', starAvatar: '', lastMessage: '[图片]', updatedAt: '5分钟前' },
       ]);
+      setError('（离线模式）');
     }
-  }
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    loadRooms();
+  }, [loadRooms]));
 
   return (
     <View style={styles.container}>
@@ -31,7 +36,7 @@ export default function ChatScreen() {
         data={rooms}
         keyExtractor={r => r.starId}
         contentContainerStyle={{ padding: spacing.lg }}
-        ListEmptyComponent={<Text style={styles.empty}>还没有私信{'\n'}订阅明星会员后即可解锁私密聊天</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{error || '还没有私信\n订阅明星会员后即可解锁私密聊天'}</Text>}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.room} activeOpacity={0.7}
             onPress={() => nav.navigate('ChatRoom', { starId: item.starId, starName: item.starName, starAvatar: item.starAvatar })}>

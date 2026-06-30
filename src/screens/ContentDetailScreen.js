@@ -58,9 +58,17 @@ export default function ContentDetailScreen() {
     const next = !isCollected;
     setIsCollected(next);
     api.toggleLike(contentId, next ? 'collect' : 'uncollect').then(res => {
-      if (res) setIsCollected(!!res.isCollected);
+      if (res) {
+        setIsCollected(!!res.isCollected);
+        Alert.alert('', next ? '已收藏' : '已取消收藏');
+      } else {
+        setIsCollected(!next); // rollback on failure
+        Alert.alert('', '操作失败，请重试');
+      }
+    }).catch(() => {
+      setIsCollected(!next);
+      Alert.alert('', '网络错误');
     });
-    Alert.alert('', next ? '已收藏' : '已取消收藏');
   }
 
   async function onShare() {

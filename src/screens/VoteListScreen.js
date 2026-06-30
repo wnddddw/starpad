@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize, cardShadow } from '../theme';
@@ -14,7 +14,7 @@ export default function VoteListScreen() {
   const nav = useNavigation();
   const [votes, setVotes] = useState(MOCK);
 
-  useFocusEffect(React.useCallback(() => {
+  useFocusEffect(useCallback(() => {
     api.getVotes().then(res => { if (res?.list?.length) setVotes(res.list); }).catch(() => {});
   }, []));
 
