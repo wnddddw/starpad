@@ -1,149 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, Image, StyleSheet,
-  Dimensions, Alert,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radius, fontSize, cardShadow } from '../theme';
-import { api } from '../api';
-import { formatCount } from '../utils';
+import { colors, spacing, radius, fontSize } from '../theme';
+import { formatCount, formatTime } from '../utils';
 
-const { width } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
 
 export default function StarScreen() {
   const route = useRoute();
   const nav = useNavigation();
   const { starId, starName } = route.params || {};
-  const [star, setStar] = useState(null);
-  const [contents, setContents] = useState([]);
+  const [star] = useState({ _id: starId, name: starName || '明星', intro: '当红焦点艺人，持续输出高质量内容。', followerCount: 128000, contentCount: 56 });
   const [isFollowing, setIsFollowing] = useState(false);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    loadStar();
-  }, [starId]);
-
-  async function loadStar() {
-    setLoadError(false);
-    try {
-      const res = await api.getStar(starId);
-      if (res?.star) {
-        setStar(res.star);
-        setContents(res.contents || []);
-        setIsFollowing(!!res.isFollowing);
-        setFollowerCount(res.star.followerCount || 0);
-        return;
-      }
-    } catch (_) {}
-    // Mock fallback
-    setLoadError(true);
-    setStar({ _id: starId, name: starName || '明星', avatar: '', intro: '当红焦点艺人，持续输出高质量内容。', cover: '' });
-    setContents([
-      { _id: 'c1', title: '直播预告：今晚8点开启粉丝问答', summary: '准备好你的问题，今晚直播间见！', timeText: '10分钟前', coverImage: '' },
-      { _id: 'c2', title: '新舞台幕后花絮公开', summary: '排练花絮首次公开，看看幕后的精彩瞬间。', timeText: '2小时前', coverImage: '' },
-      { _id: 'c3', title: '粉丝见面会精彩回顾', summary: '上周的见面会圆满结束，感谢每一位到场的你。', timeText: '1天前', coverImage: '' },
-    ]);
-    setFollowerCount(128000);
-  }
-
-  async function onFollow() {
-    const action = isFollowing ? 'unfollow' : 'follow';
-    try {
-      await api.toggleFollow(starId, action);
-      setIsFollowing(!isFollowing);
-      setFollowerCount(c => c + (isFollowing ? -1 : 1));
-    } catch (_) {}
-  }
-
-  async function onGroupLink() {
-    try {
-      const res = await api.getGroupLink(starId);
-      const list = res?.list || [];
-      if (list.length === 0) Alert.alert('提示', '该明星暂未开通粉丝群');
-      else Alert.alert('粉丝群', list[0].qrCodeUrl ? '请查看群二维码' : '请复制群链接加入');
-    } catch (_) { Alert.alert('提示', '暂未开通'); }
-  }
+  const [contents] = useState([
+    { _id:'c1', title:'直播预告：今晚 8 点开启粉丝问答', likeCount:12000, commentCount:328, isMemberOnly:false, createdAt: new Date().toISOString() },
+    { _id:'c2', title:'新舞台幕后花絮公开', likeCount:8600, commentCount:186, isMemberOnly:false, createdAt: new Date(Date.now()-7200000).toISOString() },
+    { _id:'c3', title:'会员专享：练习室独家片段', likeCount:3400, commentCount:92, isMemberOnly:true, createdAt: new Date(Date.now()-86400000).toISOString() },
+  ]);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Hero */}
-      <View style={styles.hero}>
-        <LinearGradient colors={colors.gradientHero} style={styles.heroCover}>
-          {star?.cover ? <Image source={{ uri: star.cover }} style={styles.heroCoverImg} /> : null}
+    <ScrollView style={styles.page} showsVerticalScrollIndicator={false}>
+      {/* Hero cover */}
+      <View style={styles.coverWrap}>
+        <LinearGradient colors={[colors.hpPink, colors.hpBlue]} start={{x:0,y:0}} end={{x:1,y:1}} style={styles.cover}>
+          <Text style={styles.coverStar}>★</Text>
         </LinearGradient>
-        <View style={styles.heroBody}>
-          <View style={styles.heroAvatarWrap}>
-            {star?.avatar ? (
-              <Image source={{ uri: star.avatar }} style={styles.heroAvatar} />
-            ) : (
-              <LinearGradient colors={colors.gradientPink} style={styles.heroAvatarPlaceholder}>
-                <Text style={styles.heroAvatarText}>{(star?.name || 'S')[0]}</Text>
-              </LinearGradient>
-            )}
+      </View>
+
+      {/* Info card */}
+      <View style={styles.infoCard}>
+        <View style={styles.avatarRow}>
+          <LinearGradient colors={[colors.hpPink, colors.hpBlue]} style={styles.avatar}>
+            <Text style={styles.avatarText}>{(star.name||'S')[0]}</Text>
+          </LinearGradient>
+          <View style={{flex:1}}>
+            <Text style={styles.name}>{star.name}</Text>
+            <Text style={styles.intro}>{star.intro}</Text>
           </View>
-          <Text style={styles.heroName}>{star?.name || ''}</Text>
-          <Text style={styles.heroIntro}>{star?.intro || ''}</Text>
-          <View style={styles.heroStats}>
-            <Text style={styles.heroStat}>粉丝 {formatCount(followerCount)}</Text>
-            <Text style={styles.heroStat}>动态 {contents.length} 条</Text>
-          </View>
+        </View>
+        <View style={styles.statsRow}>
+          <Text style={styles.stat}>粉丝 {formatCount(star.followerCount)}</Text>
+          <Text style={styles.stat}>动态 {star.contentCount || 0}</Text>
         </View>
 
         {/* Action buttons */}
-        <View style={styles.heroBtns}>
-          <TouchableOpacity style={styles.btnPrimary} onPress={onFollow}>
-            <Text style={styles.btnPrimaryText}>{isFollowing ? '♥ 已关注' : '+ 关注明星'}</Text>
+        <View style={styles.btnRow}>
+          <TouchableOpacity style={[styles.btn, styles.btnFollow, isFollowing && styles.btnFollowing]}
+            onPress={() => setIsFollowing(!isFollowing)}>
+            <Text style={[styles.btnFollowText, isFollowing && {color: colors.text}]}>
+              {isFollowing ? '♥ 已关注' : '+ 关注'}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnSecondary} onPress={() => nav.navigate('ChatRoom', { starId, starName: star?.name })}>
-            <Text style={styles.btnSecondaryText}>💬 私信</Text>
+          <TouchableOpacity style={[styles.btn, styles.btnChat]} onPress={() => nav.navigate('Chat')}>
+            <Text style={styles.btnChatText}>💬 私信</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.btnSecondary} onPress={() => nav.navigate('Member', { starId })}>
-            <Text style={styles.btnSecondaryText}>会员</Text>
+          <TouchableOpacity style={[styles.btn, styles.btnMember]} onPress={() => nav.navigate('Member', { starId })}>
+            <Text style={styles.btnMemberText}>会员</Text>
           </TouchableOpacity>
         </View>
 
         {/* Quick actions */}
         <View style={styles.quickRow}>
-          <TouchableOpacity style={styles.quickItem} onPress={() => nav.navigate('VoteList')}>
-            <Text style={styles.quickIcon}>🗳️</Text>
-            <Text style={styles.quickLabel}>投票打投</Text>
+          <TouchableOpacity style={styles.quick} onPress={() => nav.navigate('VoteList')}>
+            <Text style={{fontSize:20}}>🗳️</Text><Text style={styles.quickLabel}>投票</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickItem} onPress={() => nav.navigate('QA', { starId, starName: star?.name })}>
-            <Text style={styles.quickIcon}>💌</Text>
-            <Text style={styles.quickLabel}>翻牌问答</Text>
+          <TouchableOpacity style={styles.quick} onPress={() => nav.navigate('QA', { starId, starName: star.name })}>
+            <Text style={{fontSize:20}}>💌</Text><Text style={styles.quickLabel}>问答</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickItem} onPress={onGroupLink}>
-            <Text style={styles.quickIcon}>👥</Text>
-            <Text style={styles.quickLabel}>粉丝群</Text>
+          <TouchableOpacity style={styles.quick} onPress={() => nav.navigate('Chat')}>
+            <Text style={{fontSize:20}}>👥</Text><Text style={styles.quickLabel}>粉丝群</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickItem} onPress={() => nav.navigate('MallTab')}>
-            <Text style={styles.quickIcon}>🛒</Text>
-            <Text style={styles.quickLabel}>商城</Text>
+          <TouchableOpacity style={styles.quick} onPress={() => nav.navigate('MallTab')}>
+            <Text style={{fontSize:20}}>🛒</Text><Text style={styles.quickLabel}>商城</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Content Feed */}
-      <View style={styles.feedSection}>
-        {loadError && <Text style={{ textAlign: 'center', fontSize: 11, color: colors.textMuted, marginBottom: spacing.sm }}>⚠ 网络异常，显示示例内容</Text>}
-        <Text style={styles.feedTitle}>最新动态</Text>
+      {/* Content feed */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>最新动态</Text>
         {contents.map(item => (
           <TouchableOpacity key={item._id} style={styles.feedCard}
             onPress={() => nav.navigate('ContentDetail', { contentId: item._id })}>
-            <View style={styles.feedTop}>
-              <View style={styles.feedAvatarSm}>
-                <Text style={{ fontSize: 14, color: '#fff' }}>{(star?.name || 'S')[0]}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.feedCardTitle}>{item.title}</Text>
-                <Text style={styles.feedTime}>{item.timeText}</Text>
-              </View>
+            <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:6}}>
+              <View style={styles.feedAvatar}><Text style={{color:'#fff',fontSize:12}}>{(star.name||'S')[0]}</Text></View>
+              <Text style={{fontWeight:'600',fontSize:13,flex:1,color:colors.hpText}}>{item.title}</Text>
             </View>
-            <Text style={styles.feedSummary} numberOfLines={2}>{item.summary}</Text>
-            {item.coverImage ? <Image source={{ uri: item.coverImage }} style={styles.feedImage} /> : null}
-            <Text style={styles.feedLink}>查看详情 ›</Text>
+            <View style={{flexDirection:'row',justifyContent:'space-between'}}>
+              <Text style={{fontSize:11,color:colors.hpMuted}}>♥ {formatCount(item.likeCount)} · 💬 {item.commentCount}</Text>
+              {item.isMemberOnly && <Text style={{fontSize:10,color:colors.gold,fontWeight:'600'}}>会员专属</Text>}
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -152,36 +99,32 @@ export default function StarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  hero: { marginBottom: spacing.md },
-  heroCover: { width, height: 160, backgroundColor: '#f0f0f0' },
-  heroCoverImg: { width: '100%', height: '100%' },
-  heroBody: { alignItems: 'center', marginTop: -40, paddingHorizontal: spacing.lg },
-  heroAvatarWrap: { marginBottom: spacing.sm },
-  heroAvatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#fff' },
-  heroAvatarPlaceholder: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  heroAvatarText: { fontSize: 30, color: '#fff', fontWeight: '700' },
-  heroName: { fontSize: fontSize.xxl, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
-  heroIntro: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
-  heroStats: { flexDirection: 'row', gap: 20, marginBottom: spacing.lg },
-  heroStat: { fontSize: fontSize.xs, color: colors.textMuted },
-  heroBtns: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.md },
-  btnPrimary: { flex: 1, paddingVertical: 10, borderRadius: radius.full, backgroundColor: colors.pink, alignItems: 'center' },
-  btnPrimaryText: { color: '#fff', fontWeight: '700', fontSize: fontSize.sm },
-  btnSecondary: { flex: 1, paddingVertical: 10, borderRadius: radius.full, backgroundColor: colors.surfaceGlass, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  btnSecondaryText: { color: colors.textSecondary, fontWeight: '600', fontSize: fontSize.xs },
-  quickRow: { flexDirection: 'row', marginHorizontal: spacing.lg, gap: spacing.sm },
-  quickItem: { flex: 1, backgroundColor: colors.surfaceGlass, borderRadius: radius.md, padding: spacing.md, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
-  quickIcon: { fontSize: 24, marginBottom: 4 },
-  quickLabel: { fontSize: 10, color: colors.textMuted },
-  feedSection: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  feedTitle: { fontSize: fontSize.lg, fontWeight: '700', color: colors.textPrimary, marginBottom: spacing.md },
-  feedCard: { backgroundColor: colors.surfaceGlass, borderRadius: radius.lg, padding: spacing.lg, marginBottom: spacing.sm, ...cardShadow, borderWidth: 1, borderColor: colors.border },
-  feedTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
-  feedAvatarSm: { width: 36, height: 36, borderRadius: 12, backgroundColor: colors.pink, alignItems: 'center', justifyContent: 'center' },
-  feedCardTitle: { fontSize: fontSize.base, fontWeight: '600', color: colors.textPrimary },
-  feedTime: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
-  feedSummary: { fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 20, marginBottom: spacing.sm },
-  feedImage: { width: '100%', height: 180, borderRadius: radius.md, marginBottom: spacing.sm },
-  feedLink: { fontSize: fontSize.sm, color: colors.pink, fontWeight: '600' },
+  page: { flex: 1, backgroundColor: colors.bgWarm },
+  coverWrap: { width: W, height: 160 },
+  cover: { width:'100%',height:'100%',alignItems:'center',justifyContent:'center' },
+  coverStar: { fontSize:48,color:'rgba(255,255,255,0.6)' },
+  infoCard: { marginHorizontal:12,marginTop:-40,backgroundColor:'#fff',borderRadius:18,padding:16,shadowColor:'#000',shadowOffset:{width:0,height:4},shadowOpacity:0.06,shadowRadius:12,elevation:4 },
+  avatarRow: { flexDirection:'row',alignItems:'center',gap:12,marginBottom:12 },
+  avatar: { width:64,height:64,borderRadius:18,alignItems:'center',justifyContent:'center',borderWidth:3,borderColor:'#fff' },
+  avatarText: { color:'#fff',fontSize:24,fontWeight:'800' },
+  name: { fontSize:18,fontWeight:'800',color:colors.hpText },
+  intro: { fontSize:12,color:colors.hpMuted,marginTop:4,lineHeight:18 },
+  statsRow: { flexDirection:'row',gap:16,marginBottom:12 },
+  stat: { fontSize:11,color:colors.textMuted },
+  btnRow: { flexDirection:'row',gap:8,marginBottom:12 },
+  btn: { flex:1,paddingVertical:10,borderRadius:999,alignItems:'center' },
+  btnFollow: { backgroundColor:colors.hpPink },
+  btnFollowing: { backgroundColor:'#fff',borderWidth:1,borderColor:colors.border },
+  btnFollowText: { color:'#fff',fontWeight:'700',fontSize:13 },
+  btnChat: { backgroundColor:'#fff',borderWidth:1,borderColor:colors.border },
+  btnChatText: { color:colors.textSecondary,fontWeight:'600',fontSize:12 },
+  btnMember: { backgroundColor:colors.gold },
+  btnMemberText: { color:'#fff',fontWeight:'700',fontSize:13 },
+  quickRow: { flexDirection:'row',gap:8 },
+  quick: { flex:1,alignItems:'center',paddingVertical:10,backgroundColor:colors.bgSoft,borderRadius:12,borderWidth:1,borderColor:colors.border },
+  quickLabel: { fontSize:10,color:colors.textMuted,marginTop:2 },
+  section: { paddingHorizontal:12,paddingTop:16,paddingBottom:40 },
+  sectionTitle: { fontSize:16,fontWeight:'700',color:colors.hpText,marginBottom:12 },
+  feedCard: { backgroundColor:'#fff',borderRadius:14,padding:14,marginBottom:8,borderWidth:1,borderColor:'rgba(90,110,170,0.06)' },
+  feedAvatar: { width:28,height:28,borderRadius:9,backgroundColor:colors.hpPink,alignItems:'center',justifyContent:'center' },
 });

@@ -1,67 +1,49 @@
-// StarPad Design Tokens — 粉蓝渐变原生风格
+// StarPad Design Tokens
+// Global: warm terracotta (#d96c4c)
+// Home/Hot pages: pink-blue-gold (#ff5fb8/#5a8dff/#f6c35f)
+
 export const colors = {
-  // Primary
-  pink: '#ff5fb8',
-  pinkLight: '#ff9a9e',
-  pinkDark: '#e54a9e',
-  blue: '#5a8dff',
-  blueLight: '#8ab4ff',
-  blueDark: '#3d6fdd',
+  // Global warm theme (app.wxss)
+  primary: '#d96c4c',
+  primaryDark: '#b85639',
+  accent: '#ffb27a',
+  gold: '#d5a45a',
+  
+  // Home/Hot page pink-blue palette
+  hpPink: '#ff5fb8',
+  hpBlue: '#5a8dff',
+  hpGold: '#f6c35f',
+  hpTeal: '#2abf9b',
+  hpText: '#1b2140',
+  hpMuted: 'rgba(27,33,64,0.62)',
 
-  // Gradients
-  gradientPink: ['#ff5fb8', '#ff9a9e'],
-  gradientBlue: ['#5a8dff', '#8ab4ff'],
-  gradientHero: ['#ff5fb8', '#5a8dff'],
-  gradientWarm: ['#fff8f3', '#f4f7ff'],
-
-  // Neutrals
-  bg: '#f8f6f3',
+  // Backgrounds
+  bg: '#f6f2ee',
+  bgSoft: '#fff8f3',
+  bgWarm: '#fffaf6',
+  
+  // Surfaces
   surface: '#ffffff',
-  surfaceGlass: 'rgba(255,255,255,0.85)',
-  textPrimary: '#1b2140',
-  textSecondary: 'rgba(27,33,64,0.62)',
-  textMuted: '#909399',
-  border: 'rgba(90,110,170,0.08)',
-
-  // Semantic
-  like: '#f56c6c',
-  member: '#e6a23c',
-  success: '#67c23a',
+  surfaceGlass: 'rgba(255,255,255,0.88)',
+  
+  // Text
+  text: '#201d1a',
+  textSecondary: '#5f5851',
+  textMuted: '#8c8278',
+  
+  // Lines
+  border: '#eadfd7',
+  line: 'rgba(24,34,68,0.08)',
+  
+  // Shadow
+  shadow: 'rgba(89,50,24,0.08)',
+  
+  // Semantics
+  like: '#d96c4c',
+  price: '#d96c4c',
+  success: '#2abf9b',
 };
 
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  xxl: 32,
-};
-
-export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  full: 9999,
-};
-
-export const fontSize = {
-  xs: 11,
-  sm: 13,
-  base: 15,
-  md: 16,
-  lg: 18,
-  xl: 20,
-  xxl: 24,
-  hero: 28,
-};
-
-// Shared shadow for cards
-export const cardShadow = {
-  shadowColor: 'rgba(90,110,170,0.15)',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 1,
-  shadowRadius: 12,
-  elevation: 4,
-};
+export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };
+export const radius = { sm: 8, md: 12, lg: 16, xl: 18, xxl: 24, xxxl: 32, full: 9999 };
+export const fontSize = { xs: 10, sm: 12, base: 14, md: 15, lg: 17, xl: 20, xxl: 24, hero: 28 };

@@ -2,70 +2,55 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize } from '../theme';
-import { api } from '../api';
+import { formatCount } from '../utils';
+
+const HOT = ['热门搜索', '新晋顶流', '舞台高光', '热搜制造机', '综艺爆点', '演唱会现场', '关注明星', '返图更新', '应援周边'];
 
 export default function SearchScreen() {
   const nav = useNavigation();
   const [keyword, setKeyword] = useState('');
   const [results, setResults] = useState([]);
-  const [hotTags] = useState(['张艺兴', '肖战', '杨幂', '王一博', '周杰伦', '舞台高光', '新专辑']);
-
-  async function onSearch(kw) {
-    const searchTerm = (kw || keyword).trim();
-    if (!searchTerm) return;
-    try {
-      const res = await api.getStarList(searchTerm);
-      if (res?.list) setResults(res.list);
-    } catch (_) {
-      setResults([{ _id: 's1', name: '张艺兴', category: '歌手', followerCount: 248000 }]);
-    }
-  }
+  const [activeTab, setActiveTab] = useState('star');
 
   return (
-    <View style={styles.container}>
+    <View style={styles.page}>
+      {/* Search bar */}
       <View style={styles.searchBar}>
         <TextInput style={styles.input} value={keyword} onChangeText={setKeyword}
-          placeholder="搜索明星、内容..." placeholderTextColor={colors.textMuted}
-          returnKeyType="search" onSubmitEditing={onSearch} />
-        <TouchableOpacity style={styles.searchBtn} onPress={onSearch}>
-          <Text style={{ color: '#fff', fontWeight: '600' }}>搜索</Text>
+          placeholder="搜索明星、内容" placeholderTextColor={colors.textMuted}
+          returnKeyType="search" autoFocus />
+        <TouchableOpacity style={styles.btn}>
+          <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>搜索</Text>
         </TouchableOpacity>
       </View>
 
       {/* Hot tags */}
-      <View style={styles.tagWrap}>
-        {hotTags.map(t => (
-          <TouchableOpacity key={t} style={styles.tag} onPress={() => { setKeyword(t); onSearch(t); }}>
-            <Text style={styles.tagText}>{t}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>热门搜索</Text>
+        <View style={styles.tagWrap}>
+          {HOT.map((t, i) => (
+            <TouchableOpacity key={i} style={[styles.tag, i===0 && styles.tagActive]}
+              onPress={() => setKeyword(t)}>
+              <Text style={[styles.tagText, i===0 && { color: '#fff', fontWeight: '700' }]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      <FlatList
-        data={results}
-        keyExtractor={r => r._id}
-        contentContainerStyle={{ padding: spacing.lg }}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.resultItem}
-            onPress={() => nav.navigate('Star', { starId: item._id, starName: item.name })}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text style={styles.resultMeta}>{item.category} · 粉丝 {item.followerCount ? (item.followerCount / 10000).toFixed(1) + '万' : '0'}</Text>
-          </TouchableOpacity>
-        )}
-      />
+      {/* Results would go here if we had search API wired */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  searchBar: { flexDirection: 'row', gap: spacing.sm, padding: spacing.lg, backgroundColor: '#fff' },
-  input: { flex: 1, height: 40, backgroundColor: '#f5f5f5', borderRadius: 20, paddingHorizontal: 16, fontSize: 14 },
-  searchBtn: { backgroundColor: colors.pink, borderRadius: 20, paddingHorizontal: 20, justifyContent: 'center' },
-  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.lg, gap: spacing.sm },
-  tag: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full, backgroundColor: '#fff' },
-  tagText: { fontSize: fontSize.sm, color: colors.textSecondary },
-  resultItem: { backgroundColor: '#fff', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm },
-  resultName: { fontSize: fontSize.md, fontWeight: '600', color: colors.textPrimary },
-  resultMeta: { fontSize: fontSize.xs, color: colors.textMuted, marginTop: 2 },
+  page: { flex: 1, backgroundColor: colors.bgWarm },
+  searchBar: { flexDirection: 'row', gap: 10, padding: 16, backgroundColor: '#fff' },
+  input: { flex: 1, height: 42, backgroundColor: colors.bgSoft, borderRadius: 16, paddingHorizontal: 16, fontSize: 14 },
+  btn: { backgroundColor: colors.hpPink, borderRadius: 16, paddingHorizontal: 20, justifyContent: 'center' },
+  section: { padding: 16 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: colors.hpText, marginBottom: 12 },
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tag: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 999, backgroundColor: '#fff' },
+  tagActive: { backgroundColor: colors.hpPink },
+  tagText: { fontSize: 12, color: colors.textSecondary },
 });

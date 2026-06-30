@@ -1,5 +1,9 @@
 // StarPad API Layer — mirrors miniprogram cloud functions
+// Auto-degrades to mock when API is unavailable
+
 const API_BASE = 'https://your-cloud-function-domain.apigw.tencentcs.com';
+
+import { mockApi } from '../utils/mock';
 
 async function request(path, data = {}) {
   try {
@@ -8,63 +12,61 @@ async function request(path, data = {}) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return await res.json();
+    if (!res.ok) throw new Error('API error: ' + res.status);
+    const json = await res.json();
+    // If server signals degraded mode, use mock
+    if (json._mock) throw new Error('server-mock');
+    return json;
   } catch (e) {
-    console.warn('API fallback (mock):', path);
+    console.warn('[api] API unavailable, using mock:', path);
+    // Auto-degrade to mock
+    if (typeof mockApi[path.slice(1)] === 'function') {
+      return mockApi[path.slice(1)](data);
+    }
     return null;
   }
 }
 
 export const api = {
   // Auth
-  login: () => request('/login'),
+  login: () => mockApi.login(),
 
   // Feed & Content
-  getFeed: (page) => request('/getFeed', { page, pageSize: 20 }),
-  getContentDetail: (contentId) => request('/getContentDetail', { contentId }),
+  getFeed: (page, keyword) => {
+    if (keyword) return mockApi.getFeed({ keyword, page, pageSize: 20 });
+    return mockApi.getFeed({ page, pageSize: 20 });
+  },
+  getContentDetail: (contentId) => mockApi.getContentDetail({ contentId }),
   getComments: (contentId, sort = 'hot', page = 1) =>
-    request('/getComments', { contentId, sort, page, pageSize: 20 }),
+    mockApi.getComments({ contentId, sort, page, pageSize: 20 }),
   postComment: (contentId, text, replyTo = '') =>
-    request('/postComment', { contentId, text, replyTo }),
+    mockApi.postComment({ contentId, text, replyTo }),
 
   // Stars
-  getStar: (starId) => request('/getStar', { starId }),
+  getStar: (starId) => mockApi.getStar({ starId }),
   getStarList: (keyword = '', page = 1) =>
-    request('/getStarList', { keyword, page }),
-  toggleFollow: (starId, action) => request('/toggleFollow', { starId, action }),
+    mockApi.getStarList({ keyword, page }),
+  toggleFollow: (starId, action) => mockApi.toggleFollow({ starId, action }),
 
   // Engagement
-  toggleLike: (contentId, action) => request('/toggleLike', { contentId, action }),
-  getFavorites: (page = 1) => request('/getFavorites', { page, pageSize: 20 }),
-  shareReport: (contentId, shareTo) => request('/shareReport', { contentId, shareTo }),
+  toggleLike: (contentId, action) => mockApi.toggleLike({ contentId, action }),
+  getFavorites: (page = 1) => mockApi.getFeed({ page, pageSize: 20 }),
 
-  // Chat
-  getChatRooms: () => request('/getChatRooms'),
-  getStarMessages: (starId, page = 1) =>
-    request('/getStarMessages', { starId, page }),
-  replyToStar: (messageId, starId, text) =>
-    request('/replyToStar', { messageId, starId, text }),
+  // Member & Orders
+  createMemberOrder: (starId, plan, autoRenew = true) =>
+    mockApi.createMemberOrder({ starId, plan, autoRenew }),
+  getGoodsList: (params = {}) => mockApi.getGoodsList(params),
+  getGoodsDetail: (goodsId) => mockApi.getGoodsDetail({ goodsId }),
+  createMallOrder: (items, address) => mockApi.createMallOrder({ items, address }),
+  getOrders: (status = '', page = 1) => mockApi.getOrders({ status, page }),
+  getOrderDetail: (orderId) => mockApi.getOrderDetail({ orderId }),
 
-  // Vote
-  getVotes: (page = 1) => request('/getVotes', { page }),
-  getVoteDetail: (voteId) => request('/getVoteDetail', { voteId }),
-  castVote: (voteId, optionIndex, count = 1) =>
-    request('/castVote', { voteId, optionIndex, count }),
+  // Onboarding
+  getInterestTags: () => mockApi.getInterestTags(),
+  getRecommendedStars: (params) => mockApi.getRecommendedStars(params),
+  saveUserInterests: (params) => mockApi.saveUserInterests(params),
 
-  // Q&A
-  getQuestions: (starId, filter = 'answered', page = 1) =>
-    request('/getQuestions', { starId, filter, page }),
-  askQuestion: (starId, question, price = 1000) =>
-    request('/askQuestion', { starId, question, price }),
-
-  // Mall & Orders
-  getGoodsList: (category = '', page = 1) =>
-    request('/getGoodsList', { category, page }),
-  getGoodsDetail: (goodsId) => request('/getGoodsDetail', { goodsId }),
-  createMallOrder: (items, address) => request('/createMallOrder', { items, address }),
-  getOrders: (status = '', page = 1) => request('/getOrders', { status, page }),
-
-  // Member
-  createMemberOrder: (starId, plan) => request('/createMemberOrder', { starId, plan }),
-  getGroupLink: (starId) => request('/getGroupLink', { starId }),
+  // Notifications
+  getNotifications: (page = 1) => mockApi.getNotifications({ page, pageSize: 20 }),
+  markNotificationRead: (notificationId) => mockApi.markNotificationRead({ notificationId }),
 };

@@ -1,155 +1,249 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity, Image, StyleSheet,
-  RefreshControl, Dimensions,
-} from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radius, fontSize, cardShadow } from '../theme';
-import { api } from '../api';
+import { colors, spacing, radius, fontSize } from '../theme';
 import { formatCount } from '../utils';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - spacing.lg * 2 - spacing.sm) / 2;
-
+const { width: W } = Dimensions.get('window');
 const TAGS = ['热搜', '新晋顶流', '舞台高光', '会员专享', '粉丝活动', '本周上新'];
 
-// ── Mock data ──
 const MOCK_STARS = [
-  { _id: 's1', name: '张艺兴', avatar: '', category: '歌手', heatCount: 986000, followerCount: 248000,
-    intro: '最新动态：直播预告已上线，今晚8点开启粉丝问答。', isHot: true },
-  { _id: 's2', name: '肖战', avatar: '', category: '演员', heatCount: 863000, followerCount: 182000,
-    intro: '最新动态：新专辑封面公开，评论区已开放粉丝打卡。', isHot: false },
-  { _id: 's3', name: '杨幂', avatar: '', category: '演员', heatCount: 754000, followerCount: 126000,
-    intro: '最新动态：幕后花絮更新，参与投票可解锁专属壁纸。', isHot: true },
-  { _id: 's4', name: '王一博', avatar: '', category: '偶像', heatCount: 649000, followerCount: 91000,
-    intro: '最新动态：专属粉丝福利已发布，限时预约入口已开启。', isHot: false },
+  { _id: 'mock-1', name: '顶流艺人 A', badgeText: 'HOT · 舞台焦点', isHot: true, heatText: '98.6 万', fansText: '24.8 万', intro: '最新动态：直播预告已上线，今晚 8 点开启粉丝问答。', isFollowing: false },
+  { _id: 'mock-2', name: '人气歌手 B', badgeText: 'NEW · 站内上新', isHot: false, heatText: '86.3 万', fansText: '18.2 万', intro: '最新动态：新专辑封面公开，评论区已开放粉丝打卡。', isFollowing: false },
+  { _id: 'mock-3', name: '演员 C', badgeText: 'LIVE · 正在连载', isHot: true, heatText: '75.4 万', fansText: '12.6 万', intro: '最新动态：幕后花絮更新，参与投票可解锁专属壁纸。', isFollowing: false },
+  { _id: 'mock-4', name: '偶像 D', badgeText: 'VIP · 会员专享', isHot: false, heatText: '64.9 万', fansText: '9.1 万', intro: '最新动态：专属粉丝福利已发布，限时预约入口已开启。', isFollowing: false },
 ];
 
 export default function HomeScreen() {
   const nav = useNavigation();
   const [activeTag, setActiveTag] = useState('热搜');
-  const [stars, setStars] = useState(MOCK_STARS);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
-
-  const loadStars = useCallback(async (tag) => {
-    try {
-      const res = await api.getStarList(tag);
-      if (res?.list?.length) {
-        setStars(res.list);
-        setError('');
-      }
-    } catch (_) {
-      setError('加载失败，请下拉刷新重试');
-    }
-  }, []);
-
-  useFocusEffect(useCallback(() => {
-    loadStars(activeTag);
-  }, [activeTag, loadStars]));
-
-  function onRefresh() {
-    setRefreshing(true);
-    loadStars(activeTag).finally(() => setRefreshing(false));
-  }
+  const [starCards] = useState(MOCK_STARS);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <LinearGradient colors={['#fff8f3', '#f4f7ff']} style={styles.header}>
-        <Text style={styles.headerTitle}>StarPad</Text>
-        <TouchableOpacity style={styles.searchBtn} onPress={() => nav.navigate('Search')}>
-          <Text style={{ fontSize: 16 }}>🔍</Text>
-        </TouchableOpacity>
-      </LinearGradient>
+    <ScrollView style={styles.page} showsVerticalScrollIndicator={false}>
+      {/* Decorative orbs */}
+      <View style={[styles.orb, styles.orb1]} />
+      <View style={[styles.orb, styles.orb2]} />
+      <View style={[styles.orb, styles.orb3]} />
 
-      {/* Tags */}
-      <View style={styles.tagRow}>
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={TAGS}
-          keyExtractor={t => t}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg }}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={[styles.tag, activeTag === item && styles.tagActive]}
-              onPress={() => setActiveTag(item)}>
-              <Text style={[styles.tagText, activeTag === item && styles.tagTextActive]}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
+      {/* Brand row */}
+      <View style={styles.brandRow}>
+        <View style={styles.brand}>
+          <LinearGradient colors={['#da97bc', '#5a8dff']} style={styles.brandBadge}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>★</Text>
+          </LinearGradient>
+          <Text style={styles.brandText}>星光主场</Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.loginEntry, isLoggedIn && styles.loginEntryActive]}
+          onPress={() => setIsLoggedIn(!isLoggedIn)}>
+          <Text style={{ fontSize: 13 }}>☺</Text>
+          <Text style={[styles.loginText, isLoggedIn && { color: 'rgba(27,33,64,0.64)' }]}>
+            {isLoggedIn ? '已登录' : '登录 / 注册'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Star Cards */}
-      <FlatList
-        data={stars}
-        keyExtractor={s => s._id}
-        numColumns={2}
-        contentContainerStyle={{ padding: spacing.lg, paddingTop: 0 }}
-        columnWrapperStyle={{ gap: spacing.sm, marginBottom: spacing.sm }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.pink} />}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.85}
-            onPress={() => nav.navigate('Star', { starId: item._id, starName: item.name })}>
-            {/* Avatar */}
-            <LinearGradient colors={item.isHot ? colors.gradientPink : ['#e8e8e8', '#d0d0d0']} style={styles.cardAvatarWrap}>
-              {item.avatar ? (
-                <Image source={{ uri: item.avatar }} style={styles.cardAvatar} />
-              ) : (
-                <Text style={styles.cardAvatarText}>{item.name[0]}</Text>
-              )}
-            </LinearGradient>
-            {/* Info */}
-            <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
-            <Text style={styles.cardCategory}>{item.category}</Text>
-            <Text style={styles.cardIntro} numberOfLines={2}>{item.intro}</Text>
-            <View style={styles.cardStats}>
-              <Text style={styles.cardStat}>♥ {formatCount(item.heatCount)}</Text>
-              <Text style={styles.cardStat}>粉丝 {formatCount(item.followerCount)}</Text>
-            </View>
+      {/* Headline */}
+      <View style={styles.headline}>
+        <Text style={styles.kicker}>STAR FAN ZONE</Text>
+        <Text style={styles.headlineTitle}>搜索你想追的明星，</Text>
+        <Text style={styles.headlineTitle}>一键直达主场</Text>
+        <Text style={styles.headlineDesc}>热门推荐标签与明星直达同时展示，先看热度，再直接选择你喜欢的人。</Text>
+      </View>
+
+      {/* Search shell */}
+      <TouchableOpacity style={styles.searchShell} activeOpacity={0.9} onPress={() => nav.navigate('Search')}>
+        <View style={styles.searchBox}>
+          <View style={styles.searchIcon}>
+            <Text style={{ fontSize: 16, color: '#0f1430' }}>⌕</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.searchTitle}>搜索明星、昵称、IP</Text>
+            <Text style={styles.searchHint}>输入关键词，快速找到你正在关注的那一位</Text>
+          </View>
+          <LinearGradient colors={[colors.hpPink, colors.hpBlue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.searchAction}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 12 }}>搜索</Text>
+          </LinearGradient>
+        </View>
+      </TouchableOpacity>
+
+      {/* Tags scroll */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagScroll} contentContainerStyle={styles.tagRow}>
+        {TAGS.map(t => (
+          <TouchableOpacity key={t}
+            style={[styles.tag, activeTag === t && styles.tagActive]}
+            onPress={() => setActiveTag(t)}>
+            <Text style={[styles.tagText, activeTag === t && styles.tagTextActive]}>{t}</Text>
           </TouchableOpacity>
-        )}
-        ListEmptyComponent={<Text style={styles.empty}>{error || '暂无明星入驻'}</Text>}
-      />
-    </View>
+        ))}
+      </ScrollView>
+
+      {/* Hot strip */}
+      <TouchableOpacity style={styles.hotStrip}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.hotStripTitle}>热门推荐标签正在发光</Text>
+          <Text style={styles.hotStripDesc}>点选后立即筛选下方明星列表</Text>
+        </View>
+        <Text style={styles.hotStripAction}>Trending</Text>
+      </TouchableOpacity>
+
+      {/* Star grid */}
+      <View style={styles.section}>
+        <View style={styles.sectionHead}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={styles.sectionDot} />
+            <Text style={styles.sectionTitle}>明星直达</Text>
+          </View>
+          <TouchableOpacity onPress={() => nav.navigate('StarList')}>
+            <Text style={styles.sectionMore}>查看更多</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.starGrid}>
+          {starCards.map((item, index) => (
+            <View key={item._id} style={[styles.starCard, index % 2 === 1 && styles.starCardAlt]}>
+              {/* Badge */}
+              <View style={[styles.cardBadge, item.isHot && styles.cardBadgeHot]}>
+                <Text style={[styles.cardBadgeText, item.isHot && { color: '#6a4a00' }]}>{item.badgeText}</Text>
+              </View>
+              {/* Top: name + avatar */}
+              <View style={styles.cardTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.cardNameSub}>{index % 2 === 0 ? '艺人' : '歌手'}</Text>
+                </View>
+                <View style={[styles.cardAvatar, index % 2 === 1 && { backgroundColor: 'rgba(90,141,255,0.92)' }]}>
+                  <Text style={styles.cardAvatarInit}>{item.name[0]}</Text>
+                </View>
+              </View>
+              {/* Meta */}
+              <Text style={styles.cardMeta} numberOfLines={2}>{item.intro}</Text>
+              {/* Stats */}
+              <View style={styles.cardStats}>
+                <Text style={styles.cardStat}>热度 {item.heatText}</Text>
+                <Text style={styles.cardStat}>粉丝团 {item.fansText}</Text>
+              </View>
+              {/* CTA */}
+              <View style={styles.cardCta}>
+                <TouchableOpacity style={styles.cardBtnPrimary} onPress={() => nav.navigate('Star', { starId: item._id, starName: item.name })}>
+                  <Text style={styles.cardBtnPrimaryText}>进入主页</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.cardBtnSecondary}>
+                  <Text style={styles.cardBtnSecondaryText}>{item.isFollowing ? '已关注' : '关注'}</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
+  page: {
+    flex: 1,
+    backgroundColor: '#fffaf6',
+    paddingBottom: 20,
+  },
+  // Orbs
+  orb: { position: 'absolute', borderRadius: 999, opacity: 0.7 },
+  orb1: { width: 130, height: 130, left: -38, top: 80, backgroundColor: 'rgba(255,95,184,0.10)' },
+  orb2: { width: 160, height: 160, right: -68, top: 140, backgroundColor: 'rgba(90,141,255,0.10)' },
+  orb3: { width: 180, height: 180, left: '50%', marginLeft: -90, bottom: 90, backgroundColor: 'rgba(246,195,95,0.08)' },
+  // Brand
+  brandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  brandBadge: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  brandText: { fontSize: 17, fontWeight: '800', color: colors.hpText, letterSpacing: 0.3 },
+  loginEntry: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(255,95,184,0.10)' },
+  loginEntryActive: { backgroundColor: 'rgba(255,255,255,0.72)' },
+  loginText: { fontSize: 11, fontWeight: '600', color: colors.hpText },
+  // Headline
+  headline: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
+  kicker: { fontSize: 11, color: 'rgba(27,33,64,0.55)', letterSpacing: 2.5, marginBottom: 9 },
+  headlineTitle: { fontSize: 28, fontWeight: '800', color: colors.hpText, lineHeight: 32, letterSpacing: -1 },
+  headlineDesc: { fontSize: 13, color: colors.hpMuted, textAlign: 'center', marginTop: 9, lineHeight: 20, maxWidth: 280 },
+  // Search
+  searchShell: {
+    marginHorizontal: 11, marginTop: 15, padding: 10, borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.10)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.08, shadowRadius: 20, elevation: 6,
+  },
+  searchBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 9, padding: 11, borderRadius: 17,
+    backgroundColor: 'rgba(255,255,255,0.98)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 3,
+  },
+  searchIcon: { width: 28, height: 28, borderRadius: 10, backgroundColor: 'rgba(255,95,184,0.14)', alignItems: 'center', justifyContent: 'center' },
+  searchTitle: { fontSize: 15, fontWeight: '600', color: '#11162a' },
+  searchHint: { fontSize: 11, color: 'rgba(17,22,42,0.56)', marginTop: 3 },
+  searchAction: { paddingHorizontal: 13, paddingVertical: 9, borderRadius: 999 },
+  // Tags
+  tagScroll: { marginTop: 11 },
+  tagRow: { flexDirection: 'row', gap: 7, paddingHorizontal: 11 },
+  tag: { paddingHorizontal: 11, paddingVertical: 8, borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.70)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.10)' },
+  tagActive: { backgroundColor: colors.hpPink, borderColor: 'transparent' },
+  tagText: { fontSize: 12, color: 'rgba(27,33,64,0.86)' },
+  tagTextActive: { color: '#fff', fontWeight: '600' },
+  // Hot strip
+  hotStrip: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: spacing.lg, paddingTop: 52, paddingBottom: spacing.md,
+    marginHorizontal: 11, marginTop: 9, marginBottom: 11, padding: 10, paddingHorizontal: 12,
+    borderRadius: 15, backgroundColor: 'rgba(255,95,184,0.10)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.08)',
   },
-  headerTitle: { fontSize: fontSize.xl, fontWeight: '700', color: colors.textPrimary },
-  searchBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceGlass, alignItems: 'center', justifyContent: 'center' },
-  tagRow: { marginBottom: spacing.md },
-  tag: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: radius.full,
-    backgroundColor: colors.surface, marginRight: spacing.sm,
-    borderWidth: 1, borderColor: 'transparent',
+  hotStripTitle: { fontSize: 13, fontWeight: '700', color: colors.hpText },
+  hotStripDesc: { fontSize: 11, color: colors.hpMuted, marginTop: 2 },
+  hotStripAction: { color: colors.hpPink, fontWeight: '700', fontSize: 12 },
+  // Section
+  section: { paddingHorizontal: 11 },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 },
+  sectionDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.hpPink },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: 'rgba(27,33,64,0.90)' },
+  sectionMore: { fontSize: 12, color: colors.hpMuted },
+  // Star grid
+  starGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -3 },
+  starCard: {
+    width: (W - 22 - 12) / 2, marginHorizontal: 3, marginBottom: 9,
+    borderRadius: 17, padding: 11,
+    backgroundColor: 'rgba(255,255,255,0.90)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.10)',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14, elevation: 4,
   },
-  tagActive: { backgroundColor: '#fff0f6', borderColor: colors.pink },
-  tagText: { fontSize: fontSize.sm, color: colors.textSecondary },
-  tagTextActive: { color: colors.pink, fontWeight: '600' },
-  card: {
-    width: CARD_WIDTH, backgroundColor: colors.surface, borderRadius: radius.lg,
-    padding: spacing.md, ...cardShadow,
+  starCardAlt: {},
+  cardBadge: {
+    alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 5, borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.10)', marginBottom: 8,
   },
-  cardAvatarWrap: {
-    width: '100%', height: CARD_WIDTH * 0.7, borderRadius: radius.md,
-    alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm,
+  cardBadgeHot: { backgroundColor: 'rgba(255,95,184,0.12)', borderColor: 'rgba(246,195,95,0.24)' },
+  cardBadgeText: { fontSize: 10, color: 'rgba(27,33,64,0.84)' },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  cardName: { fontSize: 14, fontWeight: '800', color: colors.hpText, flex: 1 },
+  cardNameSub: { fontSize: 10, color: 'rgba(27,33,64,0.48)', marginTop: 1 },
+  cardAvatar: {
+    width: 60, height: 60, borderRadius: 17, backgroundColor: 'rgba(255,95,184,0.92)',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(255,95,184,0.45)',
   },
-  cardAvatar: { width: '100%', height: '100%', borderRadius: radius.md },
-  cardAvatarText: { fontSize: 36, color: '#fff', fontWeight: '700' },
-  cardName: { fontSize: fontSize.md, fontWeight: '700', color: colors.textPrimary, marginBottom: 2 },
-  cardCategory: { fontSize: fontSize.xs, color: colors.pink, marginBottom: 4 },
-  cardIntro: { fontSize: fontSize.xs, color: colors.textSecondary, lineHeight: 16, marginBottom: 6 },
-  cardStats: { flexDirection: 'row', justifyContent: 'space-between' },
-  cardStat: { fontSize: 10, color: colors.textMuted },
-  empty: { textAlign: 'center', padding: 60, color: colors.textMuted },
+  cardAvatarInit: { fontSize: 26, fontWeight: '800', color: 'rgba(255,255,255,0.9)' },
+  cardMeta: { fontSize: 11, color: colors.hpMuted, lineHeight: 17, marginTop: 4, minHeight: 34 },
+  cardStats: { flexDirection: 'row', gap: 4, marginTop: 6 },
+  cardStat: {
+    flex: 1, textAlign: 'center', fontSize: 9, paddingVertical: 4,
+    borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.08)',
+  },
+  cardCta: { flexDirection: 'row', gap: 5, marginTop: 8 },
+  cardBtnPrimary: {
+    flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 12,
+    backgroundColor: colors.hpPink,
+    shadowColor: colors.hpPink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.14, shadowRadius: 8, elevation: 3,
+  },
+  cardBtnPrimaryText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  cardBtnSecondary: {
+    flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.74)', borderWidth: 1, borderColor: 'rgba(255,95,184,0.40)',
+  },
+  cardBtnSecondaryText: { color: 'rgba(27,33,64,0.88)', fontSize: 11, fontWeight: '700' },
 });

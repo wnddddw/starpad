@@ -1,84 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions, Alert } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { colors, spacing, radius, fontSize } from '../theme';
-import { api } from '../api';
+import { formatPrice } from '../utils';
 
-const { width } = Dimensions.get('window');
+const { width: W } = Dimensions.get('window');
 
 export default function GoodsDetailScreen() {
   const route = useRoute();
+  const nav = useNavigation();
   const { goodsId } = route.params || {};
-  const [goods, setGoods] = useState(null);
   const [qty, setQty] = useState(1);
-
-  useEffect(() => {
-    api.getGoodsDetail(goodsId).then(res => {
-      if (res?.goods) setGoods(res.goods);
-    }).catch(() => {
-      setGoods({
-        _id: goodsId, name: '明星联名T恤', images: [], price: 9900, memberPrice: 7900,
-        desc: '柔和暖色主视觉，适合追星日常穿搭。限定批次发售，支持会员专属折扣。',
-        starName: '张艺兴', stock: 48, sales: 324,
-      });
-    });
-  }, []);
+  const [goods] = useState({
+    _id: goodsId, name:'明星联名T恤', price:9900, memberPrice:7900,
+    desc:'限量300件，官方正版授权。100%棉，S/M/L/XL可选。\n\n— 洗护建议 —\n建议手洗或机洗轻柔模式，不可漂白。',
+    starName:'顶流艺人 A', stock:200, sales:324,
+  });
 
   function onBuy() {
-    if (qty > (goods.stock || 0)) {
-      Alert.alert('', '库存不足，当前库存：' + (goods.stock || 0));
-      return;
-    }
-    Alert.alert('确认购买', `确定购买 ${qty} 件「${goods.name}」？`, [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '确定',
-        onPress: () => {
-          api.createMallOrder([{ goodsId: goods._id, qty }], '').then(res => {
-            if (res?.success !== false) Alert.alert('', '下单成功！');
-            else Alert.alert('', res?.err || '下单失败');
-          }).catch(() => Alert.alert('', '网络错误'));
-        },
-      },
+    Alert.alert('确认购买', `${qty} 件「${goods.name}」${formatPrice((goods.memberPrice||goods.price)*qty)}`, [
+      { text:'取消', style:'cancel' },
+      { text:'确定', onPress:()=>{ Alert.alert('','下单成功！（演示模式）'); nav.goBack(); }},
     ]);
   }
 
-  if (!goods) return <View style={styles.container}><Text style={{ textAlign: 'center', padding: 60 }}>加载中...</Text></View>;
-
   return (
-    <View style={styles.container}>
+    <View style={styles.page}>
       <ScrollView>
-        <View style={styles.imgWrap}>
-          {goods.images?.[0] ? <Image source={{ uri: goods.images[0] }} style={styles.img} /> : <Text style={{ fontSize: 64 }}>🛍️</Text>}
-        </View>
+        <View style={styles.imgWrap}><Text style={{fontSize:64}}>🛍️</Text></View>
         <View style={styles.info}>
-          <Text style={styles.name}>{goods.name}</Text>
-          <Text style={styles.star}>{goods.starName}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>¥{(goods.memberPrice || goods.price) / 100}</Text>
+            <Text style={styles.price}>{formatPrice(goods.memberPrice||goods.price)}</Text>
             {goods.memberPrice && goods.memberPrice < goods.price && (
-              <Text style={styles.origPrice}>¥{goods.price / 100}</Text>
+              <Text style={styles.origPrice}>{formatPrice(goods.price)}</Text>
+            )}
+            {goods.memberPrice && (
+              <Text style={styles.saveTag}>会员省 ¥{((goods.price-goods.memberPrice)/100).toFixed(2)}</Text>
             )}
           </View>
+          <Text style={styles.name}>{goods.name}</Text>
+          <Text style={styles.stats}>{goods.starName} · 已售 {goods.sales} · 库存 {goods.stock}</Text>
+          <View style={styles.divider} />
+          <Text style={styles.descTitle}>商品描述</Text>
           <Text style={styles.desc}>{goods.desc}</Text>
-          <View style={styles.metaRow}>
-            <Text style={styles.meta}>库存 {goods.stock} · 已售 {goods.sales}</Text>
-          </View>
         </View>
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={styles.bottom}>
         <View style={styles.qtyRow}>
-          <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(q => Math.max(1, q - 1))}>
-            <Text style={{ fontSize: 18 }}>−</Text>
-          </TouchableOpacity>
-          <Text style={{ fontSize: fontSize.md, fontWeight: '600', marginHorizontal: spacing.md }}>{qty}</Text>
-          <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(q => Math.min(goods.stock || 99, q + 1))}>
-            <Text style={{ fontSize: 18 }}>+</Text>
-          </TouchableOpacity>
+          <TouchableOpacity style={styles.qtyBtn} onPress={()=>setQty(q=>Math.max(1,q-1))}><Text>−</Text></TouchableOpacity>
+          <Text style={{fontSize:15,fontWeight:'600',marginHorizontal:12}}>{qty}</Text>
+          <TouchableOpacity style={styles.qtyBtn} onPress={()=>setQty(q=>Math.min(goods.stock,q+1))}><Text>+</Text></TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.buyBtn} onPress={onBuy}>
-          <Text style={{ color: '#fff', fontWeight: '700', fontSize: fontSize.md }}>立即购买</Text>
+          <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>立即购买</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -86,20 +61,20 @@ export default function GoodsDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  imgWrap: { width, height: width, backgroundColor: '#f8f8f8', alignItems: 'center', justifyContent: 'center' },
-  img: { width: '100%', height: '100%' },
-  info: { padding: spacing.lg },
-  name: { fontSize: fontSize.xl, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
-  star: { fontSize: fontSize.sm, color: colors.textMuted, marginBottom: spacing.md },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: spacing.md },
-  price: { fontSize: 28, fontWeight: '700', color: colors.like },
-  origPrice: { fontSize: fontSize.sm, color: colors.textMuted, textDecorationLine: 'line-through' },
-  desc: { fontSize: fontSize.sm, color: colors.textSecondary, lineHeight: 22, marginBottom: spacing.md },
-  metaRow: { flexDirection: 'row', gap: 16 },
-  meta: { fontSize: fontSize.xs, color: colors.textMuted },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, borderTopWidth: 1, borderTopColor: '#eee', gap: spacing.md },
-  qtyRow: { flexDirection: 'row', alignItems: 'center' },
-  qtyBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#f5f5f5', alignItems: 'center', justifyContent: 'center' },
-  buyBtn: { flex: 1, backgroundColor: colors.pink, borderRadius: radius.full, paddingVertical: 12, alignItems: 'center' },
+  page: { flex:1, backgroundColor:'#fff' },
+  imgWrap: { width:W, height:W, backgroundColor:'#f8f8f8', alignItems:'center', justifyContent:'center' },
+  info: { padding:16 },
+  priceRow: { flexDirection:'row', alignItems:'baseline', gap:8, marginBottom:12 },
+  price: { fontSize:22, fontWeight:'700', color:colors.price },
+  origPrice: { fontSize:13, color:colors.textMuted, textDecorationLine:'line-through' },
+  saveTag: { fontSize:10, color:colors.gold, fontWeight:'600', backgroundColor:colors.bgSoft, paddingHorizontal:8, paddingVertical:2, borderRadius:4 },
+  name: { fontSize:18, fontWeight:'700', color:colors.text, marginBottom:4 },
+  stats: { fontSize:13, color:colors.textMuted },
+  divider: { height:1, backgroundColor:colors.border, marginVertical:16 },
+  descTitle: { fontSize:15, fontWeight:'700', color:colors.text, marginBottom:8 },
+  desc: { fontSize:13, color:colors.textSecondary, lineHeight:22 },
+  bottom: { flexDirection:'row', alignItems:'center', padding:16, borderTopWidth:1, borderTopColor:colors.border, gap:12 },
+  qtyRow: { flexDirection:'row', alignItems:'center' },
+  qtyBtn: { width:32, height:32, borderRadius:8, backgroundColor:colors.bg, alignItems:'center', justifyContent:'center', borderWidth:1, borderColor:colors.border },
+  buyBtn: { flex:1, backgroundColor:colors.hpPink, borderRadius:20, paddingVertical:12, alignItems:'center' },
 });
