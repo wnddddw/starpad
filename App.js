@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets, SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/store/auth';
 
 // Screens
 import HomeScreen from './src/screens/HomeScreen';
@@ -71,6 +72,7 @@ function TabNavigator() {
 export default function App() {
   return (
     <SafeAreaProvider>
+    <AuthProvider>
     <NavigationContainer>
       <StatusBar style="dark" />
       <Stack.Navigator screenOptions={{
@@ -99,6 +101,7 @@ export default function App() {
         <Stack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '我的收藏' }} />
       </Stack.Navigator>
     </NavigationContainer>
+    </AuthProvider>
     </SafeAreaProvider>
   );
 }

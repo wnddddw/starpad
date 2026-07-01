@@ -1,26 +1,28 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { colors, spacing, radius, fontSize } from '../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, fontSize } from '../theme';
 import { formatCount, formatTime } from '../utils';
 
 const MOCK_FEED = [
-  { _id:'feed-1', starId:'star-1', starName:'顶流艺人 A', starAvatar:'', title:'直播预告：今晚 8 点开启粉丝问答环节', timeAgo:'10 分钟前', likeText:'1.2 万', commentCount:328, media:[] },
-  { _id:'feed-2', starId:'star-2', starName:'人气歌手 B', starAvatar:'', title:'新专辑封面公开，评论区已开放打卡', timeAgo:'28 分钟前', likeText:'986', commentCount:142, media:[] },
-  { _id:'feed-3', starId:'star-3', starName:'演员 C', starAvatar:'', title:'幕后花絮更新：参与投票可解锁专属壁纸', timeAgo:'1 小时前', likeText:'2.8 万', commentCount:567, media:[] },
-  { _id:'feed-4', starId:'star-4', starName:'偶像 D', starAvatar:'', title:'专属粉丝福利已发布，限时预约入口已开启', timeAgo:'2 小时前', likeText:'765', commentCount:89, media:[] },
+  { _id:'feed-1', starId:'mock-1', starName:'顶流艺人 A', starAvatar:'https://picsum.photos/seed/star1/100/100', title:'直播预告：今晚 8 点开启粉丝问答环节', timeAgo:'10 分钟前', likeText:'1.2 万', commentCount:328, media:['https://picsum.photos/seed/feed1/400/300'] },
+  { _id:'feed-2', starId:'mock-2', starName:'人气歌手 B', starAvatar:'https://picsum.photos/seed/star2/100/100', title:'新专辑封面公开，评论区已开放打卡', timeAgo:'28 分钟前', likeText:'986', commentCount:142, media:['https://picsum.photos/seed/feed2/400/300'] },
+  { _id:'feed-3', starId:'mock-3', starName:'演员 C', starAvatar:'https://picsum.photos/seed/star3/100/100', title:'幕后花絮更新：参与投票可解锁专属壁纸', timeAgo:'1 小时前', likeText:'2.8 万', commentCount:567, media:['https://picsum.photos/seed/feed3/400/300'] },
+  { _id:'feed-4', starId:'mock-4', starName:'偶像 D', starAvatar:'https://picsum.photos/seed/star4/100/100', title:'专属粉丝福利已发布，限时预约入口已开启', timeAgo:'2 小时前', likeText:'765', commentCount:89, media:['https://picsum.photos/seed/feed4/400/300'] },
+  { _id:'feed-5', starId:'mock-5', starName:'实力唱将 E', starAvatar:'https://picsum.photos/seed/star5/100/100', title:'新歌预热：今晚首发试听片段', timeAgo:'3 小时前', likeText:'3.1 万', commentCount:892, media:['https://picsum.photos/seed/feed5/400/300'] },
 ];
 
 export default function HotScreen() {
   const nav = useNavigation();
-  const [feedList] = useState(MOCK_FEED);
+  const insets = useSafeAreaInsets();
+  const [feed] = useState(MOCK_FEED);
   const [refreshing, setRefreshing] = useState(false);
 
   function onRefresh() { setRefreshing(true); setTimeout(() => setRefreshing(false), 800); }
 
   return (
-    <View style={styles.page}>
-      {/* Hero */}
+    <View style={[styles.page, { paddingTop: insets.top }]}>
       <View style={styles.hero}>
         <Text style={styles.heroIcon}>✦</Text>
         <Text style={styles.heroTitle}>热门动态</Text>
@@ -28,27 +30,24 @@ export default function HotScreen() {
       </View>
 
       <FlatList
-        data={feedList}
+        data={feed}
         keyExtractor={f => f._id}
         contentContainerStyle={{ paddingHorizontal: 12 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.hpPink} />}
+        ListEmptyComponent={<Text style={styles.empty}>✦{'\n\n'}还没有热门动态{'\n'}关注明星后，这里会出现最新热门内容。</Text>}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            {/* Header */}
             <TouchableOpacity style={styles.head} onPress={() => nav.navigate('Star', { starId: item.starId, starName: item.starName })}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{item.starName[0]}</Text>
-              </View>
+              {item.starAvatar ? <Image source={{ uri: item.starAvatar }} style={styles.avatarImg} />
+                : <View style={styles.avatar}><Text style={styles.avatarText}>{item.starName[0]}</Text></View>}
               <View style={{ flex: 1 }}>
                 <Text style={styles.starName}>{item.starName}</Text>
                 <Text style={styles.time}>{item.timeAgo}</Text>
               </View>
               <Text style={styles.arrow}>›</Text>
             </TouchableOpacity>
-            {/* Content */}
             <Text style={styles.title}>{item.title}</Text>
             {item.media?.[0] ? <Image source={{ uri: item.media[0] }} style={styles.image} /> : null}
-            {/* Actions */}
             <TouchableOpacity style={styles.actions} onPress={() => nav.navigate('ContentDetail', { contentId: item._id })}>
               <Text style={styles.stat}>♥ {item.likeText}</Text>
               <Text style={styles.stat}>✎ {item.commentCount || 0}</Text>
@@ -62,21 +61,16 @@ export default function HotScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    backgroundColor: colors.bgWarm,
-  },
-  hero: { alignItems: 'center', paddingVertical: 18, paddingTop: 14 },
+  page: { flex: 1, backgroundColor: colors.bgWarm },
+  hero: { alignItems: 'center', paddingVertical: 14 },
   heroIcon: { fontSize: 26, color: colors.hpGold, marginBottom: 4 },
   heroTitle: { fontSize: 20, fontWeight: '800', color: colors.hpText },
   heroDesc: { fontSize: 12, color: colors.hpMuted, marginTop: 6 },
-  card: {
-    padding: 12, borderRadius: 14, marginBottom: 10,
-    backgroundColor: 'rgba(255,255,255,0.92)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.08)',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 3,
-  },
+  empty: { textAlign: 'center', padding: 60, color: colors.hpMuted, fontSize: 14, lineHeight: 22 },
+  card: { padding: 12, borderRadius: 14, marginBottom: 10, backgroundColor: 'rgba(255,255,255,0.92)', borderWidth: 1, borderColor: 'rgba(90,110,170,0.08)', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 10, elevation: 3 },
   head: { flexDirection: 'row', alignItems: 'center', marginBottom: 9 },
   avatar: { width: 36, height: 36, borderRadius: 11, backgroundColor: 'rgba(255,95,184,0.24)', alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  avatarImg: { width: 36, height: 36, borderRadius: 11, marginRight: 8 },
   avatarText: { fontSize: 14, fontWeight: '700', color: colors.hpText },
   starName: { fontSize: 14, fontWeight: '700', color: colors.hpText },
   time: { fontSize: 11, color: colors.hpMuted, marginTop: 2 },
